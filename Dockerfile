@@ -73,11 +73,13 @@ RUN chgrp -R 0 /var/www/MISP && chown -R misp-user /var/www/MISP && chmod -R g=u
 
 # Verify image
 FROM misp as verify
+USER misp-user
 RUN touch /verified && \
     su-exec apache /usr/local/bin/misp_verify.sh
 
 # Final image
 FROM misp
+USER misp-user
 # Hack that will force run verify stage
 COPY --from=verify /verified /
 
