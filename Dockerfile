@@ -66,6 +66,8 @@ RUN chmod u=r,g=r,o=r /var/www/MISP/app/Config/* && \
     chmod 644 /etc/logrotate.d/* && \
     chmod 644 /root/.jobber && \
     mkdir /run/php-fpm
+    
+RUN chgrp -R 0 /var/www/MISP && chmod -R g=u /var/www/MISP
 
 # Verify image
 FROM misp as verify
@@ -85,6 +87,7 @@ VOLUME /var/www/MISP/app/attachments/
 VOLUME /var/www/MISP/.gnupg/
 
 WORKDIR /var/www/MISP/
+USER 1001
 # Web server
 EXPOSE 80
 # ZeroMQ
