@@ -69,7 +69,7 @@ RUN chmod u=r,g=r,o=r /var/www/MISP/app/Config/* && \
     chmod 644 /root/.jobber && \
     mkdir /run/php-fpm
     
-RUN chgrp -R 0 /var/www/MISP && chown -R /var/www/MISP && chmod -R g=u /var/www/MISP
+RUN chgrp -R 0 /var/www/MISP && chown -R misp-user /var/www/MISP && chmod -R g=u /var/www/MISP
 
 # Verify image
 FROM misp as verify
