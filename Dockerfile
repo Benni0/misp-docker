@@ -38,6 +38,8 @@ RUN bash /usr/local/bin/misp_enable_epel.sh && \
     pip3 --no-cache-dir install --disable-pip-version-check -r /tmp/requirements.txt && \
     rm -rf /var/cache/dnf /tmp/packages
 
+RUN useradd misp-user
+
 COPY --from=builder /usr/local/bin/su-exec /usr/local/bin/
 COPY --from=php-build /build/php-modules/* /usr/lib64/php/modules/
 COPY --from=jobber-build /build/jobber*.rpm /tmp
@@ -67,7 +69,7 @@ RUN chmod u=r,g=r,o=r /var/www/MISP/app/Config/* && \
     chmod 644 /root/.jobber && \
     mkdir /run/php-fpm
     
-RUN chgrp -R 0 /var/www/MISP && chmod -R g=u /var/www/MISP
+RUN chgrp -R 0 /var/www/MISP && chown -R /var/www/MISP && chmod -R g=u /var/www/MISP
 
 # Verify image
 FROM misp as verify
@@ -87,7 +89,7 @@ VOLUME /var/www/MISP/app/attachments/
 VOLUME /var/www/MISP/.gnupg/
 
 WORKDIR /var/www/MISP/
-USER 1001
+USER misp-user
 # Web server
 EXPOSE 80
 # ZeroMQ
