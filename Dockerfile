@@ -73,9 +73,12 @@ RUN chgrp -R 0 /var/www/MISP && chown -R misp-user /var/www/MISP && chmod -R g=u
 
 # Verify image
 FROM misp as verify
-USER misp-user
 RUN touch /verified && \
-    su-exec apache /usr/local/bin/misp_verify.sh
+    chgrp -R 0 /verified && \
+    chown -R misp-user /verified && \
+    chmod -R g=u /verified
+USER misp-user
+RUN  su-exec apache /usr/local/bin/misp_verify.sh
 
 # Final image
 FROM misp
