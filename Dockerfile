@@ -71,6 +71,7 @@ RUN chmod u=r,g=r,o=r /var/www/MISP/app/Config/* && \
     
 RUN chgrp -R 0 /var/www/MISP && chown -R misp-user /var/www/MISP && chmod -R g=u /var/www/MISP
 RUN chmod g+w /var/www/MISP/app/Config/database.php
+RUN chmod g+w /var/www/MISP/app/Config/config.php
 
 # Verify image
 FROM misp as verify
