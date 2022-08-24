@@ -17,12 +17,12 @@ if [ "$1" = 'supervisord' ]; then
     #chmod 440 /var/www/MISP/app/Config/{config.php,database.php,email.php}
 
     # Check syntax errors in generated config files
-    exec php -l /var/www/MISP/app/Config/config.php
-    exec php -l /var/www/MISP/app/Config/database.php
-    exec php -l /var/www/MISP/app/Config/email.php
+    php -l /var/www/MISP/app/Config/config.php
+    php -l /var/www/MISP/app/Config/database.php
+    php -l /var/www/MISP/app/Config/email.php
 
     # Check if all permissions are OK
-    exec misp_check_permissions.py
+    misp_check_permissions.py
 
     # Check syntax of Apache2 configs
     httpd -t
@@ -31,16 +31,16 @@ if [ "$1" = 'supervisord' ]; then
     php-fpm --test
 
     # Create database schema
-    exec misp_create_database.py $MYSQL_HOST $MYSQL_LOGIN $MYSQL_DATABASE /var/www/MISP/INSTALL/MYSQL.sql
+    misp_create_database.py $MYSQL_HOST $MYSQL_LOGIN $MYSQL_DATABASE /var/www/MISP/INSTALL/MYSQL.sql
 
     # Update database to latest version
-    exec /var/www/MISP/app/Console/cake Admin runUpdates || true
+    /var/www/MISP/app/Console/cake Admin runUpdates || true
 
     # Update all data stored in JSONs like objects, warninglists etc.
-    nice exec /var/www/MISP/app/Console/cake Admin updateJSON &
+    nice /var/www/MISP/app/Console/cake Admin updateJSON &
 
     # Check if redis is listening and running
-    exec /var/www/MISP/app/Console/cake Admin redisReady
+    /var/www/MISP/app/Console/cake Admin redisReady
 fi
 
 # unset sensitive env variables
@@ -55,7 +55,7 @@ unset OIDC_CLIENT_CRYPTO_PASS
 # Create GPG homedir under apache user
 #chown -R apache:apache /var/www/MISP/.gnupg
 chmod 700 /var/www/MISP/.gnupg
-exec gpg --homedir /var/www/MISP/.gnupg --list-keys
+gpg --homedir /var/www/MISP/.gnupg --list-keys
 
 # Change volumes permission to apache user
 #chown apache:apache /var/www/MISP/app/attachments
