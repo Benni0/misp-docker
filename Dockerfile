@@ -86,6 +86,7 @@ RUN chgrp 0 /var/log/supervisor && chmod 770 /var/log/supervisor
 RUN sed -i -e 's/80/8080/g' /etc/httpd/conf/httpd.conf
 RUN chmod -R g=u /var/log
 RUN chmod 770 /var/log/httpd
+RUN chmod -R g=u /var/run
  
 # Verify image
 FROM misp as verify
