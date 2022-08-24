@@ -74,7 +74,7 @@ RUN chmod g+w /var/www/MISP/app/Config/database.php
 RUN chmod g+w /var/www/MISP/app/Config/config.php
 RUN chmod g+w /var/www/MISP/app/Config/email.php
 RUN touch /etc/php.d/40-snuffleupagus.ini && chgrp 0 /etc/php.d/40-snuffleupagus.ini && chmod g+w /etc/php.d/40-snuffleupagus.ini
-RUN chgrp 0 /etc/php-fpm.d/sessions.conf && chmod g+w /etc/php-fpm.d/sessions.conf
+RUN touch /etc/php-fpm.d/sessions.conf && chgrp 0 /etc/php-fpm.d/sessions.conf && chmod g+w /etc/php-fpm.d/sessions.conf
 
 # Verify image
 FROM misp as verify
