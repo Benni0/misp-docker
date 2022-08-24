@@ -82,7 +82,7 @@ RUN touch /etc/php.d/99-misp.ini && chgrp 0 /etc/php.d/99-misp.ini && chmod g+w 
 RUN chgrp 0 /etc/crypto-policies/config && chmod g+w /etc/crypto-policies/config
 # Todo: change jobber
 RUN touch /root/.jobber && chgrp 0 /root/.jobber && chmod g+w /root/.jobber
-RUN mkdir /var/log/supervisor && chgrp 0 /var/log/supervisor && chmod 770 /var/log/supervisor
+RUN chgrp 0 /var/log/supervisor && chmod 770 /var/log/supervisor
 
 # Verify image
 FROM misp as verify
