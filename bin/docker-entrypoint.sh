@@ -13,16 +13,16 @@ if [ "$1" = 'supervisord' ]; then
     #update-crypto-policies
 
     # Make config files not readable by others
-    chown root:apache /var/www/MISP/app/Config/{config.php,database.php,email.php}
-    chmod 440 /var/www/MISP/app/Config/{config.php,database.php,email.php}
+    #chown root:apache /var/www/MISP/app/Config/{config.php,database.php,email.php}
+    #chmod 440 /var/www/MISP/app/Config/{config.php,database.php,email.php}
 
     # Check syntax errors in generated config files
-    su-exec apache php -l /var/www/MISP/app/Config/config.php
-    su-exec apache php -l /var/www/MISP/app/Config/database.php
-    su-exec apache php -l /var/www/MISP/app/Config/email.php
+    exec php -l /var/www/MISP/app/Config/config.php
+    exec php -l /var/www/MISP/app/Config/database.php
+    exec php -l /var/www/MISP/app/Config/email.php
 
     # Check if all permissions are OK
-    su-exec apache misp_check_permissions.py
+    exec misp_check_permissions.py
 
     # Check syntax of Apache2 configs
     httpd -t
@@ -31,16 +31,16 @@ if [ "$1" = 'supervisord' ]; then
     php-fpm --test
 
     # Create database schema
-    su-exec apache misp_create_database.py $MYSQL_HOST $MYSQL_LOGIN $MYSQL_DATABASE /var/www/MISP/INSTALL/MYSQL.sql
+    exec misp_create_database.py $MYSQL_HOST $MYSQL_LOGIN $MYSQL_DATABASE /var/www/MISP/INSTALL/MYSQL.sql
 
     # Update database to latest version
-    su-exec apache /var/www/MISP/app/Console/cake Admin runUpdates || true
+    exec /var/www/MISP/app/Console/cake Admin runUpdates || true
 
     # Update all data stored in JSONs like objects, warninglists etc.
-    nice su-exec apache /var/www/MISP/app/Console/cake Admin updateJSON &
+    nice exec /var/www/MISP/app/Console/cake Admin updateJSON &
 
     # Check if redis is listening and running
-    su-exec apache /var/www/MISP/app/Console/cake Admin redisReady
+    exec /var/www/MISP/app/Console/cake Admin redisReady
 fi
 
 # unset sensitive env variables
@@ -53,14 +53,14 @@ unset OIDC_CLIENT_SECRET
 unset OIDC_CLIENT_CRYPTO_PASS
 
 # Create GPG homedir under apache user
-chown -R apache:apache /var/www/MISP/.gnupg
+#chown -R apache:apache /var/www/MISP/.gnupg
 chmod 700 /var/www/MISP/.gnupg
-su-exec apache gpg --homedir /var/www/MISP/.gnupg --list-keys
+exec gpg --homedir /var/www/MISP/.gnupg --list-keys
 
 # Change volumes permission to apache user
-chown apache:apache /var/www/MISP/app/attachments
-chown apache:apache /var/www/MISP/app/tmp/logs
-chown apache:apache /var/www/MISP/app/files/certs
+#chown apache:apache /var/www/MISP/app/attachments
+#chown apache:apache /var/www/MISP/app/tmp/logs
+#chown apache:apache /var/www/MISP/app/files/certs
 
 # Remove possible exists PID files
 rm -f /var/run/httpd/httpd.pid
