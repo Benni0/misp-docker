@@ -85,8 +85,10 @@ RUN touch /root/.jobber && chgrp 0 /root/.jobber && chmod g+w /root/.jobber
 RUN chgrp 0 /var/log/supervisor && chmod 770 /var/log/supervisor
 RUN sed -i -e 's/80/8080/g' /etc/httpd/conf/httpd.conf
 RUN chmod -R g=u /var/log
-RUN chmod 770 /var/log/httpd
+RUN chmod 777 /var/log/httpd
 RUN chmod -R g=u /var/run
+RUN chwon apache:root /var/run/httpd
+
  
 # Verify image
 FROM misp as verify
