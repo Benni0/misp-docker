@@ -78,7 +78,7 @@ RUN touch /verified && \
     chown -R misp-user /verified && \
     chmod -R g=u /verified
 USER misp-user
-RUN  su-exec apache /usr/local/bin/misp_verify.sh
+RUN  exec /usr/local/bin/misp_verify.sh
 
 # Final image
 FROM misp
