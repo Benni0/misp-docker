@@ -79,6 +79,7 @@ RUN touch /etc/httpd/conf.d/misp.conf && chgrp 0 /etc/httpd/conf.d/misp.conf && 
 RUN touch /etc/rsyslog.d/file.conf && chgrp 0 /etc/rsyslog.d/file.conf && chmod g+w /etc/rsyslog.d/file.conf
 RUN chgrp -R 0 /var/www/html && chown -R misp-user /var/www/html && chmod -R g=u /var/www/html
 RUN touch /etc/php.d/99-misp.ini && chgrp 0 /etc/php.d/99-misp.ini && chmod g+w /etc/php.d/99-misp.ini
+RUN chgrp 0 /etc/crypto-policies/config && chmod g+w /etc/crypto-policies/config
 
 # Verify image
 FROM misp as verify
