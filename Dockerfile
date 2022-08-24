@@ -110,7 +110,7 @@ VOLUME /var/www/MISP/.gnupg/
 WORKDIR /var/www/MISP/
 USER misp-user
 # Web server
-EXPOSE 80
+EXPOSE 8080
 # ZeroMQ
 EXPOSE 50000
 # This is a hack how to go trought mod_auth_openidc
