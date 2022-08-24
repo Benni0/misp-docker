@@ -22,7 +22,7 @@ if [ "$1" = 'supervisord' ]; then
     php -l /var/www/MISP/app/Config/email.php
 
     # Check if all permissions are OK
-    misp_check_permissions.py
+    # misp_check_permissions.py
 
     # Check syntax of Apache2 configs
     httpd -t
