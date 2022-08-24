@@ -88,6 +88,7 @@ RUN chmod -R g=u /var/log
 RUN chmod 777 /var/log/httpd
 RUN chmod -R g=u /var/run
 RUN chown apache:root /var/run/httpd
+RUN mkdir /var/jobber && chgrp 0 /var/jobber && g=u /var/jobber
 
  
 # Verify image
