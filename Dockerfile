@@ -83,6 +83,7 @@ RUN chgrp 0 /etc/crypto-policies/config && chmod g+w /etc/crypto-policies/config
 # Todo: change jobber
 RUN touch /root/.jobber && chgrp 0 /root/.jobber && chmod g+w /root/.jobber
 RUN chgrp 0 /var/log/supervisor && chmod 770 /var/log/supervisor
+RUN sed -i -e 's/80/8080/g' /etc/httpd/conf/httpd.conf
 
 # Verify image
 FROM misp as verify
