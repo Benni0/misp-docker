@@ -73,6 +73,7 @@ RUN chgrp -R 0 /var/www/MISP && chown -R misp-user /var/www/MISP && chmod -R g=u
 RUN chmod g+w /var/www/MISP/app/Config/database.php
 RUN chmod g+w /var/www/MISP/app/Config/config.php
 RUN chmod g+w /var/www/MISP/app/Config/email.php
+RUN chgrp 0 /etc/php.d/40-snuffleupagus.ini && chmod g+w /etc/php.d/40-snuffleupagus.ini
 
 # Verify image
 FROM misp as verify
