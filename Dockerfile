@@ -77,10 +77,8 @@ RUN touch /etc/php.d/40-snuffleupagus.ini && chgrp 0 /etc/php.d/40-snuffleupagus
 RUN touch /etc/php-fpm.d/sessions.conf && chgrp 0 /etc/php-fpm.d/sessions.conf && chmod g+w /etc/php-fpm.d/sessions.conf
 RUN touch /etc/httpd/conf.d/misp.conf && chgrp 0 /etc/httpd/conf.d/misp.conf && chmod g+w /etc/httpd/conf.d/misp.conf
 RUN touch /etc/rsyslog.d/file.conf && chgrp 0 /etc/rsyslog.d/file.conf && chmod g+w /etc/rsyslog.d/file.conf
-#RUN touch /var/www/html/503.shtml && chgrp 0 /var/www/html/503.shtml && chmod g+w /var/www/html/503.shtml
-#RUN touch /var/www/html/504.shtml && chgrp 0 /var/www/html/504.shtml && chmod g+w /var/www/html/504.shtml
-#RUN touch /var/www/html/500.shtml && chgrp 0 /var/www/html/500.shtml && chmod g+w /var/www/html/500.shtml
 RUN chgrp -R 0 /var/www/html && chown -R misp-user /var/www/html && chmod -R g=u /var/www/html
+RUN touch /etc/php.d/99-misp.ini && chgrp 0 /etc/php.d/99-misp.ini && chmod g+w /etc/php.d/99-misp.ini
 
 # Verify image
 FROM misp as verify
