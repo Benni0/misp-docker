@@ -63,7 +63,7 @@ unset OIDC_CLIENT_CRYPTO_PASS
 #chown apache:apache /var/www/MISP/app/files/certs
 
 # Remove possible exists PID files
-rm -f /var/run/httpd/httpd.pid
-rm -f /var/run/syslogd.pid
+#rm -f /var/run/httpd/httpd.pid
+#rm -f /var/run/syslogd.pid
 
 exec "$@"
