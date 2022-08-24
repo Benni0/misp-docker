@@ -79,6 +79,7 @@ RUN touch /etc/httpd/conf.d/misp.conf && chgrp 0 /etc/httpd/conf.d/misp.conf && 
 RUN touch /etc/rsyslog.d/file.conf && chgrp 0 /etc/rsyslog.d/file.conf && chmod g+w /etc/rsyslog.d/file.conf
 RUN touch /var/www/html/503.shtml && chgrp 0 /var/www/html/503.shtml && chmod g+w /var/www/html/503.shtml
 RUN touch /var/www/html/504.shtml && chgrp 0 /var/www/html/504.shtml && chmod g+w /var/www/html/504.shtml
+RUN touch /var/www/html/500.shtml && chgrp 0 /var/www/html/500.shtml && chmod g+w /var/www/html/500.shtml
 
 # Verify image
 FROM misp as verify
