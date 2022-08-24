@@ -87,7 +87,7 @@ RUN sed -i -e 's/80/8080/g' /etc/httpd/conf/httpd.conf
 RUN chmod -R g=u /var/log
 RUN chmod 777 /var/log/httpd
 RUN chmod -R g=u /var/run
-RUN chwon apache:root /var/run/httpd
+RUN chown apache:root /var/run/httpd
 
  
 # Verify image
