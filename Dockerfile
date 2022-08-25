@@ -69,7 +69,7 @@ RUN chmod u=r,g=r,o=r /var/www/MISP/app/Config/* && \
     chmod 644 /root/.jobber && \
     mkdir /run/php-fpm
 
-RUN sed -i -e 'a/ProcessTool::whoami()/"httpd"/g' /var/www/MISP/app/Console/Command/AdminShell.php
+RUN sed -i -e 's/ProcessTool::whoami()/"httpd"/g' /var/www/MISP/app/Console/Command/AdminShell.php
     
 RUN chgrp -R 0 /var/www/MISP && chown -R misp-user /var/www/MISP && chmod -R g=u /var/www/MISP
 RUN chmod g+w /var/www/MISP/app/Config/database.php
