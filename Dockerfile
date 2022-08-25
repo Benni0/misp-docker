@@ -86,8 +86,17 @@ RUN chgrp 0 /var/log/supervisor && chmod 770 /var/log/supervisor
 RUN sed -i -e 's/80/8080/g' /etc/httpd/conf/httpd.conf
 RUN chmod -R g=u /var/log
 RUN chmod 777 /var/log/httpd
-RUN chmod -R g=u /var/run
-RUN chown apache:root /var/run/httpd
+#RUN chmod -R g=u /var/run
+RUN chown -R apache:root /var/run/httpd
+RUN chmod -R g=u /var/run/httpd
+RUN chmod -R g=u /var/run/php-fpm
+#RUN touch /var/run/rsyslogd.pid
+#RUN chmod 777 /var/run/rsyslogd.pid
+RUN chmod -R g=u /var/run/supervisor
+RUN touch /var/run/supervisord.pid
+RUN chmod g=u /var/run/supervisord.pid
+RUN chmod g=u /run
+#RUN chmod -R g=u /var/run/ chmod -R g=u /var/run/supervisor
 RUN mkdir /var/jobber && chgrp 0 /var/jobber && chmod g=u /var/jobber
 
  
