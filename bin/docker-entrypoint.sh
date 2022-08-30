@@ -2,6 +2,13 @@
 # Copyright (C) 2022 National Cyber and Information Security Agency of the Czech Republic
 set -e
 
+export USER_ID=$(id -u)
+export GROUP_ID=$(id -g)
+envsubst < /root/passwd.template > /tmp/passwd
+export LD_PRELOAD=/usr/lib64/libnss_wrapper.so
+export NSS_WRAPPER_PASSWD=/tmp/passwd
+export NSS_WRAPPER_GROUP=/etc/group
+
 if [ "$1" = 'supervisord' ]; then
     echo "======================================"
     echo "MISP $MISP_VERSION container image provided by National Cyber and Information Security Agency of the Czech Republic"
