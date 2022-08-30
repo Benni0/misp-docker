@@ -34,6 +34,7 @@ COPY bin/misp_enable_epel.sh /usr/local/bin/
 RUN bash /usr/local/bin/misp_enable_epel.sh && \
     dnf module -y enable mod_auth_openidc php:7.4 python39 && \
     dnf install --setopt=tsflags=nodocs --setopt=install_weak_deps=False -y $(grep -vE "^\s*#" /tmp/packages | tr "\n" " ") && \
+    dnf install -y nss_wrapper gettext && \
     alternatives --set python3 /usr/bin/python3.9 && \
     pip3 --no-cache-dir install --disable-pip-version-check -r /tmp/requirements.txt && \
     rm -rf /var/cache/dnf /tmp/packages
@@ -100,6 +101,9 @@ RUN chmod g=u /var/run/supervisord.pid
 RUN chmod g=u /run
 #RUN chmod -R g=u /var/run/ chmod -R g=u /var/run/supervisor
 RUN mkdir /var/jobber && chgrp 0 /var/jobber && chmod g=u /var/jobber
+
+COPY passwd.template /root/passwd.template
+RUN chmod g=u /root/passwd.template
 
  
 # Verify image
