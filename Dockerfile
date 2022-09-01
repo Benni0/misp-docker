@@ -101,6 +101,7 @@ RUN chmod g=u /var/run/supervisord.pid
 RUN chmod g=u /run
 #RUN chmod -R g=u /var/run/ chmod -R g=u /var/run/supervisor
 RUN mkdir /var/jobber && chgrp 0 /var/jobber && chmod g=u /var/jobber
+RUN mkdir /var/jobber/0 && chown root:root /var/jobber/0 && chmod g=u /var/jobber/0
 
 COPY passwd.template /root/passwd.template
 RUN chmod g=u /root/passwd.template
