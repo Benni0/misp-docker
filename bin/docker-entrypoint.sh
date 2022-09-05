@@ -77,5 +77,6 @@ unset OIDC_CLIENT_CRYPTO_PASS
 # create jobber file for user
 cat /root/.jobber >> /tmp/${UID}.jobber
 chmod 644 /tmp/${UID}.jobber
+mkdir /var/jobber/${UID}
 
 exec "$@"
