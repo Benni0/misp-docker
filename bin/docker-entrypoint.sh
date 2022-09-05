@@ -2,6 +2,7 @@
 # Copyright (C) 2022 National Cyber and Information Security Agency of the Czech Republic
 set -e
 
+# Set user
 export USER_ID=$(id -u)
 export GROUP_ID=$(id -g)
 envsubst < /root/passwd.template > /tmp/passwd
@@ -72,5 +73,9 @@ unset OIDC_CLIENT_CRYPTO_PASS
 # Remove possible exists PID files
 #rm -f /var/run/httpd/httpd.pid
 #rm -f /var/run/syslogd.pid
+
+# create jobber file for user
+/root/.jobber >> /tmp/${UID}.jobber
+chmod 644 /tmp/${UID}.jobber
 
 exec "$@"
