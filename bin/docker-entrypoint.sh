@@ -75,7 +75,7 @@ unset OIDC_CLIENT_CRYPTO_PASS
 #rm -f /var/run/syslogd.pid
 
 # create jobber file for user
-/root/.jobber >> /tmp/${UID}.jobber
+cat /root/.jobber >> /tmp/${UID}.jobber
 chmod 644 /tmp/${UID}.jobber
 
 exec "$@"
