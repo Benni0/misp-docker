@@ -35,7 +35,7 @@ RUN bash /usr/local/bin/misp_enable_epel.sh && \
     dnf module -y enable mod_auth_openidc php:7.4 python39 && \
     dnf install --setopt=tsflags=nodocs --setopt=install_weak_deps=False -y $(grep -vE "^\s*#" /tmp/packages | tr "\n" " ") && \
     dnf install -y nss_wrapper gettext && \
-    dnf install -y telnet && \
+    dnf install -y telnet tcpdump && \
     alternatives --set python3 /usr/bin/python3.9 && \
     pip3 --no-cache-dir install --disable-pip-version-check -r /tmp/requirements.txt && \
     rm -rf /var/cache/dnf /tmp/packages
