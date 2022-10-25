@@ -12,14 +12,23 @@ download_and_check () {
 }
 
 # Install required packages for build
-dnf install -y --setopt=tsflags=nodocs --setopt=install_weak_deps=False php-devel php-mbstring php-json php-xml brotli-devel diffutils file libzstd-devel ssdeep-devel
+dnf install -y --setopt=tsflags=nodocs --setopt=install_weak_deps=False php-devel php-mbstring php-json php-xml brotli-devel diffutils file ssdeep-devel
 
 mkdir /build/php-modules/
+
+# Compile simdjson
+mkdir /tmp/simdjson
+cd /tmp/simdjson
+download_and_check https://github.com/crazyxman/simdjson_php/releases/download/3.0.0/simdjson-3.0.0.tgz 23cdf65ee50d7f1d5c2aa623a885349c3208d10dbfe289a71f26bfe105ea8db9
+phpize
+./configure
+make -j$(nproc)
+mv modules/*.so /build/php-modules/
 
 # Compile igbinary
 mkdir /tmp/igbinary
 cd /tmp/igbinary
-download_and_check https://github.com/igbinary/igbinary/archive/refs/tags/3.2.7.tar.gz 21863908348f90a8a895c8e92e0ec83c9cf9faffcfd70118b06fe2dca30eaa96
+download_and_check https://github.com/igbinary/igbinary/archive/refs/tags/3.2.9.tar.gz 45b7e42b379955735c7f9aa2d703181d0036195bc0ce4eb7f27937162792d177
 phpize
 ./configure --silent CFLAGS="-O2 -g" --enable-igbinary
 make -j$(nproc)
@@ -43,7 +52,7 @@ mkdir /tmp/redis
 cd /tmp/redis
 download_and_check https://github.com/phpredis/phpredis/archive/refs/tags/5.3.7.tar.gz 6f5cda93aac8c1c4bafa45255460292571fb2f029b0ac4a5a4dc66987a9529e6
 phpize
-./configure --silent --enable-redis-igbinary --enable-redis-zstd
+./configure --silent --enable-redis-igbinary
 make -j$(nproc)
 mv modules/*.so /build/php-modules/
 
