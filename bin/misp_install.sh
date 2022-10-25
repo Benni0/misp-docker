@@ -10,6 +10,7 @@ echo 'extension = brotli.so' > /etc/php.d/40-brotli.ini
 echo 'extension = zstd.so' > /etc/php.d/40-zstd.ini
 echo 'extension = igbinary.so' > /etc/php.d/40-igbinary.ini
 echo 'extension = ssdeep.so' > /etc/php.d/40-ssdeep.ini
+echo 'extension = simdjson.so' > /etc/php.d/40-simdjson.ini
 echo "extension = redis.so
 
 redis.session.locking_enabled = 1
@@ -63,7 +64,7 @@ su-exec apache git submodule update --depth 1 --init --recursive .
 # Install MISP composer dependencies
 cd /var/www/MISP/app
 # require exact version of `symfony/polyfill-php80` to keep compatibility, because later version replaces Attribute class :/
-su-exec apache php composer.phar --no-cache require --update-no-dev symfony/polyfill-php80:v1.18.1 sentry/sdk jakub-onderka/openid-connect-php:1.0.0 cakephp/cakephp:2.10.24 supervisorphp/supervisor guzzlehttp/guzzle php-http/message
+su-exec apache php composer.phar --no-cache require --update-no-dev symfony/polyfill-php80:v1.18.1 sentry/sdk jakub-onderka/openid-connect-php:1.1.0 cakephp/cakephp:2.10.24 supervisorphp/supervisor guzzlehttp/guzzle php-http/message
 # Remove unused packages
 su-exec apache php composer.phar --no-cache remove --update-no-dev monolog/monolog kamisama/cake-resque
 
