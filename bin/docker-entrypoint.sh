@@ -61,8 +61,8 @@ unset OIDC_CLIENT_SECRET
 unset OIDC_CLIENT_CRYPTO_PASS
 
 # Create GPG homedir under apache user
-#chown -R apache:apache /var/www/MISP/.gnupg
-chmod 700 /var/www/MISP/.gnupg
+# chown -R apache:apache /var/www/MISP/.gnupg
+# chmod 700 /var/www/MISP/.gnupg
 gpg --homedir /var/www/MISP/.gnupg --list-keys
 
 # Change volumes permission to apache user
