@@ -107,6 +107,7 @@ RUN mkdir /var/jobber/0 && chown root:root /var/jobber/0 && chmod g=u /var/jobbe
 COPY passwd.template /root/passwd.template
 RUN chmod g=u /root/passwd.template
 
+RUN mkdir /var/www/MISP/.gnupg
 RUN chown -R apache:root /var/www/MISP/.gnupg
 RUN chmod 770 /var/www/MISP/.gnupg
 
