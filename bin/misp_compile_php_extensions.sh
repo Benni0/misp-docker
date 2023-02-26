@@ -28,7 +28,7 @@ mv modules/*.so /build/php-modules/
 # Compile igbinary
 mkdir /tmp/igbinary
 cd /tmp/igbinary
-download_and_check https://github.com/igbinary/igbinary/archive/refs/tags/3.2.12.tar.gz de41f25b7d3cf707332c0069ad2a7541f0265b6689de5e99da3c2cab4bf5465e
+download_and_check https://github.com/igbinary/igbinary/archive/refs/tags/3.2.13.tar.gz 4400ecefafe0901c2ead0e1770b0d4041151e0c51bcb27c4a6c30becb1acb7da
 phpize
 ./configure --silent CFLAGS="-O2 -g" --enable-igbinary
 make -j$(nproc)
@@ -38,9 +38,9 @@ mv modules/*.so /build/php-modules/
 # Compile zstd library and zstd extension
 mkdir /tmp/zstd
 cd /tmp/zstd
-download_and_check https://github.com/kjdev/php-ext-zstd/archive/refs/tags/0.12.0.tar.gz 11619e80c7c6ef1673d3de91c246524a778a356f72bb55aeb7e5cf85d52833a6
+download_and_check https://github.com/kjdev/php-ext-zstd/archive/refs/tags/0.12.1.tar.gz f07d2bbf788565a7a161643b0de218d7d4de0efb07bf5cf600e20fdcd673763e
 cd zstd
-download_and_check https://github.com/facebook/zstd/archive/refs/tags/v1.5.2.tar.gz f7de13462f7a82c29ab865820149e778cbfe01087b3a55b5332707abf9db4a6e
+download_and_check https://github.com/facebook/zstd/releases/download/v1.5.4/zstd-1.5.4.tar.gz 0f470992aedad543126d06efab344dc5f3e171893810455787d38347343a4424
 cd ..
 phpize
 ./configure --silent
@@ -77,7 +77,7 @@ mv modules/*.so /build/php-modules/
 # Compile snuffleupagus
 mkdir /tmp/snuffleupagus
 cd /tmp/snuffleupagus
-download_and_check https://github.com/jvoisin/snuffleupagus/archive/refs/tags/v0.8.3.tar.gz 0d4c7fd99ddb9f028d9ca684058a254f52a9ed540455d6056ed1f0af1228e118
+download_and_check https://github.com/jvoisin/snuffleupagus/archive/refs/tags/v0.9.0.tar.gz 36c99dd9540444ab6c931c687255522dac6705275cdc291b4e25a1d416b7a42e
 cd src
 phpize
 ./configure --silent --enable-snuffleupagus
