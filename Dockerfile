@@ -34,9 +34,13 @@ COPY bin/misp_enable_epel.sh /usr/local/bin/
 RUN bash /usr/local/bin/misp_enable_epel.sh && \
     dnf module -y enable mod_auth_openidc php:7.4 python39 && \
     dnf install --setopt=tsflags=nodocs --setopt=install_weak_deps=False -y $(grep -vE "^\s*#" /tmp/packages | tr "\n" " ") && \
+    dnf install -y nss_wrapper gettext && \
+    dnf install -y telnet tcpdump && \
     alternatives --set python3 /usr/bin/python3.9 && \
     pip3 --no-cache-dir install --disable-pip-version-check -r /tmp/requirements.txt && \
     rm -rf /var/cache/dnf /tmp/packages
+
+RUN useradd misp-user
 
 COPY --from=builder /usr/local/bin/su-exec /usr/local/bin/
 COPY --from=php-build /build/php-modules/* /usr/lib64/php/modules/
@@ -67,13 +71,61 @@ RUN chmod u=r,g=r,o=r /var/www/MISP/app/Config/* && \
     chmod 644 /root/.jobber && \
     mkdir /run/php-fpm
 
+RUN sed -i -e 's/ProcessTool::whoami()/"httpd"/g' /var/www/MISP/app/Console/Command/AdminShell.php
+    
+RUN chgrp -R 0 /var/www/MISP && chown -R misp-user /var/www/MISP && chmod -R g=u /var/www/MISP
+RUN chmod g+w /var/www/MISP/app/Config/database.php
+RUN chmod g+w /var/www/MISP/app/Config/config.php
+RUN chmod g+w /var/www/MISP/app/Config/email.php
+RUN touch /etc/php.d/40-snuffleupagus.ini && chgrp 0 /etc/php.d/40-snuffleupagus.ini && chmod g+w /etc/php.d/40-snuffleupagus.ini
+RUN touch /etc/php-fpm.d/sessions.conf && chgrp 0 /etc/php-fpm.d/sessions.conf && chmod g+w /etc/php-fpm.d/sessions.conf
+RUN touch /etc/httpd/conf.d/misp.conf && chgrp 0 /etc/httpd/conf.d/misp.conf && chmod g+w /etc/httpd/conf.d/misp.conf
+RUN touch /etc/rsyslog.d/file.conf && chgrp 0 /etc/rsyslog.d/file.conf && chmod g+w /etc/rsyslog.d/file.conf
+RUN chgrp -R 0 /var/www/html && chown -R misp-user /var/www/html && chmod -R g=u /var/www/html
+RUN touch /etc/php.d/99-misp.ini && chgrp 0 /etc/php.d/99-misp.ini && chmod g+w /etc/php.d/99-misp.ini
+RUN chgrp 0 /etc/crypto-policies/config && chmod g+w /etc/crypto-policies/config
+# Todo: change jobber
+RUN touch /root/.jobber && chgrp 0 /root/.jobber && chmod g+w /root/.jobber
+RUN chgrp 0 /var/log/supervisor && chmod 770 /var/log/supervisor
+RUN sed -i -e 's/80/8080/g' /etc/httpd/conf/httpd.conf
+RUN chmod -R g=u /var/log
+RUN chmod 777 /var/log/httpd
+#RUN chmod -R g=u /var/run
+RUN chown -R apache:root /var/run/httpd
+RUN chmod -R g=u /var/run/httpd
+RUN chmod -R g=u /var/run/php-fpm
+#RUN touch /var/run/rsyslogd.pid
+#RUN chmod 777 /var/run/rsyslogd.pid
+RUN chmod -R g=u /var/run/supervisor
+RUN touch /var/run/supervisord.pid
+RUN chmod g=u /var/run/supervisord.pid
+RUN chmod g=u /run
+#RUN chmod -R g=u /var/run/ chmod -R g=u /var/run/supervisor
+RUN mkdir /var/jobber && chgrp 0 /var/jobber && chmod g=u /var/jobber
+RUN mkdir /var/jobber/0 && chown root:root /var/jobber/0 && chmod g=u /var/jobber/0
+
+COPY passwd.template /root/passwd.template
+RUN chmod g=u /root/passwd.template
+
+RUN mkdir /var/www/MISP/.gnupg
+RUN chown -R apache:root /var/www/MISP/.gnupg
+RUN chmod 770 /var/www/MISP/.gnupg
+
+# for debug
+RUN chmod 664 /etc/supervisord.d/misp.ini
+ 
 # Verify image
 FROM misp as verify
 RUN touch /verified && \
-    su-exec apache /usr/local/bin/misp_verify.sh
+    chgrp -R 0 /verified && \
+    chown -R misp-user /verified && \
+    chmod -R g=u /verified
+USER misp-user
+RUN  exec /usr/local/bin/misp_verify.sh
 
 # Final image
 FROM misp
+USER misp-user
 # Hack that will force run verify stage
 COPY --from=verify /verified /
 
@@ -85,8 +137,9 @@ VOLUME /var/www/MISP/app/attachments/
 VOLUME /var/www/MISP/.gnupg/
 
 WORKDIR /var/www/MISP/
+USER misp-user
 # Web server
-EXPOSE 80
+EXPOSE 8080
 # ZeroMQ
 EXPOSE 50000
 # This is a hack how to go trought mod_auth_openidc
