@@ -65,6 +65,14 @@ unset OIDC_CLIENT_CRYPTO_PASS
 # chmod 770 /var/www/MISP/.gnupg
 gpg --homedir /var/www/MISP/.gnupg --list-keys
 
+if [ -n "${GNUPG_PRIVATE_KEY}" -a -n "${GNUPG_PRIVATE_KEY_PASSWORD}" ]; then
+    # Import private key
+    su-exec apache gpg --homedir /var/www/MISP/.gnupg --import --batch \
+        --passphrase "${GNUPG_PRIVATE_KEY_PASSWORD}" <<< "${GNUPG_PRIVATE_KEY}"
+fi
+unset GNUPG_PRIVATE_KEY
+unset GNUPG_PRIVATE_KEY_PASSWORD
+
 # Change volumes permission to apache user
 #chown apache:apache /var/www/MISP/app/attachments
 #chown apache:apache /var/www/MISP/app/tmp/logs

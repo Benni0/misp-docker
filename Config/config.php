@@ -35,6 +35,7 @@ $oidcAuth = [
         'misp-api-access' => 'User with API access',
         'misp-access' => 3, // User
     ],
+    'roles_property' => {{ OIDC_ROLES_PROPERTY_INNER | str }},
     'organisation_property' => {{ OIDC_ORGANISATION_PROPERTY | str }},
     'default_org' => '{{ OIDC_DEFAULT_ORG if OIDC_DEFAULT_ORG else MISP_ORG }}',
     'unblock' => true,
@@ -48,6 +49,9 @@ $oidcAuth = NULL;
 {% endif %}
 
 $config = [
+  {% if not MISP_DEBUG %}
+  'Asset' => ['timestamp' => 'cached'],
+  {% endif %}
   'debug' => {{ 1 if MISP_DEBUG else 0 }},
   'MISP' => [
     'baseurl' => '{{ MISP_BASEURL }}',

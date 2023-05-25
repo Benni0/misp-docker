@@ -113,6 +113,8 @@ VARIABLES = {
     "OIDC_CLIENT_CRYPTO_PASS": Option(),
     "OIDC_DEFAULT_ORG": Option(),
     "OIDC_PASSWORD_RESET": Option(validation=check_is_url),
+    "OIDC_ROLES_PROPERTY": Option(default="roles"),
+    "OIDC_ROLES_PROPERTY_INNER": Option(),
     "OIDC_ORGANISATION_PROPERTY": Option(default="organization"),
     "OIDC_OFFLINE_ACCESS": Option(typ=bool, default=False),
     "OIDC_CHECK_USER_VALIDITY": Option(typ=int, default=0),
@@ -130,6 +132,7 @@ VARIABLES = {
     "ZEROMQ_PASSWORD": Option(),
     # SMTP
     "SMTP_HOST": Option(),
+    "SMTP_PORT": Option(typ=int, default=25),
     "SMTP_USERNAME": Option(),
     "SMTP_PASSWORD": Option(),
     "SUPPORT_EMAIL": Option(validation=check_is_email),
@@ -151,6 +154,7 @@ VARIABLES = {
     # Security
     "GNUPG_SIGN": Option(typ=bool, default=False),
     "GNUPG_PRIVATE_KEY_PASSWORD": Option(),
+    "GNUPG_PRIVATE_KEY": Option(),
     "GNUPG_BODY_ONLY_ENCRYPTED": Option(typ=bool, default=False),
     "SECURITY_ADVANCED_AUTHKEYS": Option(typ=bool, default=False),
     "SECURITY_HIDE_ORGS": Option(typ=bool, default=False),
@@ -356,7 +360,7 @@ def main():
 
     variables["MISP_UUID"] = variables["MISP_UUID"].lower()
 
-    for var in ("OIDC_PROVIDER_INNER", "OIDC_CLIENT_ID_INNER", "OIDC_CLIENT_SECRET_INNER", "OIDC_AUTHENTICATION_METHOD_INNER", "OIDC_CODE_CHALLENGE_METHOD_INNER"):
+    for var in ("OIDC_PROVIDER_INNER", "OIDC_CLIENT_ID_INNER", "OIDC_CLIENT_SECRET_INNER", "OIDC_AUTHENTICATION_METHOD_INNER", "OIDC_CODE_CHALLENGE_METHOD_INNER", "OIDC_ROLES_PROPERTY_INNER"):
         if not variables[var]:
             variables[var] = variables[var.replace("_INNER", "")]
 
