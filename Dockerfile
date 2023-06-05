@@ -69,6 +69,7 @@ RUN chmod u=r,g=r,o=r /var/www/MISP/app/Config/* && \
     chmod 644 /etc/supervisord.d/misp.ini && \
     chmod 644 /etc/rsyslog.conf && \
     chmod 644 /etc/httpd/conf.d/misp.conf && \
+    chmod 644 /etc/httpd/conf.d/auth_openidc.conf && \
     chmod 644 /etc/php.d/snuffleupagus-misp.rules && \
     chmod 644 /etc/logrotate.d/* && \
     chmod 644 /root/.jobber && \
