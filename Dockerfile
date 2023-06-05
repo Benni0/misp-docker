@@ -55,6 +55,8 @@ COPY .jobber /root/
 COPY supervisor.ini /etc/supervisord.d/misp.ini
 COPY logrotate/* /etc/logrotate.d/
 
+RUN update-crypto-policies
+
 ARG CACHEBUST=1
 ARG MISP_VERSION=2.4
 ENV MISP_VERSION $MISP_VERSION
