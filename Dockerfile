@@ -66,7 +66,7 @@ RUN rpm -i /tmp/jobber*.rpm && \
     /usr/local/bin/misp_install.sh
 COPY Config/* /var/www/MISP/app/Config/
 RUN chmod u=r,g=r,o=r /var/www/MISP/app/Config/* && \
-    chmod 644 /etc/supervisord.d/misp.ini && \
+    chmod 664 /etc/supervisord.d/misp.ini && \
     chmod 644 /etc/rsyslog.conf && \
     chmod 644 /etc/httpd/conf.d/misp.conf && \
     chmod 644 /etc/httpd/conf.d/auth_openidc.conf && \
