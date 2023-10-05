@@ -14,15 +14,14 @@ RUN gcc -Wall -Werror -g -o /usr/local/bin/su-exec /tmp/su-exec.c && \
 # Build PHP extensions that are not included in packages
 FROM builder as php-build
 COPY bin/misp_compile_php_extensions.sh bin/misp_enable_epel.sh /build/
-RUN --mount=type=tmpfs,target=/tmp \
-    dnf module enable -y php:7.4 && \
+RUN dnf module enable -y php:7.4 && \
     bash /build/misp_enable_epel.sh && \
     bash /build/misp_compile_php_extensions.sh
 
 # Build jobber, that is not released for arm64 arch
 FROM builder as jobber-build
 COPY bin/misp_compile_jobber.sh /build/
-RUN --mount=type=tmpfs,target=/tmp bash /build/misp_compile_jobber.sh
+RUN bash /build/misp_compile_jobber.sh
 
 # MISP image
 FROM base as misp
