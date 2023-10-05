@@ -50,7 +50,7 @@ mv modules/*.so /build/php-modules/
 # Compile redis
 mkdir /tmp/redis
 cd /tmp/redis
-download_and_check https://github.com/phpredis/phpredis/archive/refs/tags/5.3.7.tar.gz 6f5cda93aac8c1c4bafa45255460292571fb2f029b0ac4a5a4dc66987a9529e6
+download_and_check https://github.com/phpredis/phpredis/archive/refs/tags/6.0.1.tar.gz 22ac500d53a3fea75663253e8f4fbe7fdc070ced23cc45b6ee56dee15f5f2913
 phpize
 ./configure --silent --enable-redis-igbinary
 make -j$(nproc)
@@ -68,7 +68,7 @@ mv modules/*.so /build/php-modules/
 # Compile brotli
 mkdir /tmp/brotli
 cd /tmp/brotli
-download_and_check https://github.com/kjdev/php-ext-brotli/archive/refs/tags/0.14.0.tar.gz a79576e19b9c520a477074e0a34bae618b2a160393e6c088c214862ed804f709
+download_and_check https://github.com/kjdev/php-ext-brotli/archive/refs/tags/0.14.2.tar.gz 40b00f6ab75a4ce54b8af009e8ad2ac5077a4a35d6bbb50807324565b8472bee
 phpize
 ./configure --silent --with-libbrotli
 make -j$(nproc)
@@ -77,7 +77,7 @@ mv modules/*.so /build/php-modules/
 # Compile snuffleupagus
 mkdir /tmp/snuffleupagus
 cd /tmp/snuffleupagus
-download_and_check https://github.com/jvoisin/snuffleupagus/archive/refs/tags/v0.9.0.tar.gz 36c99dd9540444ab6c931c687255522dac6705275cdc291b4e25a1d416b7a42e
+download_and_check https://github.com/jvoisin/snuffleupagus/archive/refs/tags/v0.10.0.tar.gz 2b48dc38e208e793d3e694688d9ae9fc429e99a8df01133f6e0a4444036ba304
 cd src
 phpize
 ./configure --silent --enable-snuffleupagus
