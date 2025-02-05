@@ -1,8 +1,6 @@
-version: '3.3'
-
 services:
   mysql:
-    image: mariadb:11.1
+    image: mariadb:11.5
     restart: always
     container_name: misp-mysql
     tmpfs:
@@ -16,7 +14,7 @@ services:
       MYSQL_ROOT_PASSWORD: password # Please change for production
 
   redis:
-    image: redis:7.2
+    image: redis:7.4
     restart: always
     container_name: misp-redis
     volumes:
@@ -49,6 +47,12 @@ services:
       - MKNOD
       - AUDIT_WRITE
       - SETFCAP
+    # Just for debugging purposes
+    #cap_add:
+    #  - SYS_PTRACE
+    env_file:
+      - path: .env_s3
+        required: false
     environment:
       MYSQL_HOST: mysql
       MYSQL_LOGIN: misp
@@ -61,11 +65,27 @@ services:
       MISP_MODULE_URL: http://misp-modules
       MISP_EMAIL: ahoj@example.com # Please change for production
       SECURITY_SALT: PleaseChangeForProduction # Please change for production
-      ZEROMQ_ENABLED: "yes"
+      ZEROMQ_ENABLED: yes
+      SYSLOG_ENABLED: no
+      ECS_LOG_ENABLED: yes
+      MISP_DEBUG: yes
+    volumes:
+      - misp_logs:/var/www/MISP/app/tmp/logs/
+      - misp_certs:/var/www/MISP/app/files/certs/
+      - misp_attachments:/var/www/MISP/app/attachments/
+      - misp_img_orgs:/var/www/MISP/app/files/img/orgs/
+      - misp_img_custom:/var/www/MISP/app/files/img/custom/
+      - misp_gnupg:/var/www/MISP/.gnupg/
     ports:
-      - 127.0.0.1:8080:80
-      - 127.0.0.1:50000:50000
+      - "127.0.0.1:8080:80"
+      - "127.0.0.1:50000:50000"
 
 volumes:
   mysql_data:
   redis_data:
+  misp_logs:
+  misp_certs:
+  misp_attachments:
+  misp_img_orgs:
+  misp_img_custom:
+  misp_gnupg:

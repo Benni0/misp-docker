@@ -38,8 +38,8 @@ jobs:
   {% endif %}
 
   {% if JOBBER_CACHE_SERVERS_TIME %}
-  PullServers:
-    cmd: su-exec apache /var/www/MISP/app/Console/cake Server cacheServerAll {{ JOBBER_USER_ID }}
+  CacheServers:
+    cmd: MISP_AUTOMATIC_TASK=true su-exec apache /var/www/MISP/app/Console/cake Server cacheServerAll {{ JOBBER_USER_ID }}
     time: {{ JOBBER_CACHE_SERVERS_TIME }}
     onError: Backoff
   {% endif %}

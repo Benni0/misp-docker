@@ -5,7 +5,7 @@
 sp.global.show_old_php_warning.disable();
 
 # Prevent the execution of writeable PHP files.
-#sp.readonly_exec.simulation().enable();
+sp.readonly_exec.no_extended_checks().enable();
 
 # Disabling the loading of external entities in the XML parser.
 sp.xxe_protection.enable();
@@ -29,7 +29,6 @@ sp.disable_function.function("move_uploaded_file").param("new_path").value_r("\\
 sp.disable_function.function("move_uploaded_file").param("new_path").value_r("\\.ht").drop();
 
 # Command executions
-sp.disable_function.function("shell_exec").filename("/var/www/MISP/app/Lib/Tools/PubSubTool.php").allow();
 sp.disable_function.function("proc_open").filename("/var/www/MISP/app/Lib/Tools/ProcessTool.php").allow();
 sp.disable_function.function("proc_open").filename("/var/www/MISP/app/Lib/Tools/BackgroundJobs/BackgroundJob.php").allow();
 sp.disable_function.function("proc_open").filename("/var/www/MISP/app/Vendor/pear/crypt_gpg/Crypt/GPG/Engine.php").allow();

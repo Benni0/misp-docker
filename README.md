@@ -1,19 +1,19 @@
 # MISP Docker image
 
-[MISP](https://github.com/misp/misp/) container (Docker) image focused on high performance and security based on CentOS Stream 8.
+[MISP](https://github.com/misp/misp/) container (Docker) image focused on high performance and security based on [AlmaLinux](https://hub.docker.com/_/almalinux), ready for production.
 
 This image contains the latest version of MISP and the required dependencies. Image is intended as immutable, which means that it is not possible
 to update MISP from the user interface and instead, an admin should download a newer image.
 
 ## Key features
 
-* 🎩 Image is based on CentOS Stream 8, so perfectly fits your infrastructure if you use CentOS or RHEL as a host system
-* ✅ Modern MISP features are enabled by default (like advanced audit log or storing setting in the database)
+* 🎩 Image is based on AlmaLinux, so perfectly fits your infrastructure if you use CentOS or RHEL as a host system
+* ✅ Modern MISP features are enabled by default (like advanced audit log or storing settings in the database)
 * 👩‍💻 Integrated support for [OpenID Connect (OIDC) authentication](docs/OIDC.md)
 * 🔒️ PHP is by default protected by Snuffleupagus extensions with [rules](snuffleupagus-misp.rules) tailored to MISP
 * 🚀 Optional extensions and configurations that will make MISP faster are enabled
-* 📓 Integrated support for logging exceptions to Sentry and forwarding logs to syslog server
-* 🧪 Final image is automatically tested, so every release should work as expected
+* 📓 Integrated support for logging into [ECS format](docs/LOGGING.md), exceptions to Sentry and forwarding logs to syslog server
+* 🧪 The final image is automatically tested, so every release should work as expected
 * 🏛 Build for amd64 (x86_64) and arm64 (aarch64)
 
 ## Usage
@@ -29,7 +29,7 @@ Docker Compose file defines MISP itself, [MISP Modules](https://github.com/NUKIB
     curl --proto '=https' --tlsv1.2 -O https://raw.githubusercontent.com/NUKIB/misp/main/docker-compose.yml
     docker compose up -d
 
-Then you can access MISP in your browser by accessing `http://localhost:8080`. Default user after installation is `admin@admin.test` with password `admin`.
+Then you can access MISP in your browser by accessing `http://localhost:8080`. The default user after installation is `admin@admin.test` with the password `admin`.
 
 To delete all volumes after testing, run:
 
@@ -38,7 +38,7 @@ To delete all volumes after testing, run:
 ### Updating
 
 When a new MISP is released, also new container image is created. For updating MISP and MISP Modules, just run these commands in the folder that contains `docker-compose.yml` file.
-These commands will download the latest images and recreate containers:
+These commands will download the latest images and recreate containers. All data will be preserved.
 
     docker compose pull
     docker compose up -d
@@ -49,6 +49,7 @@ For production usage, please:
 * change passwords for MariaDB and Redis,
 * modify environment variables to requested values,
 * deploy reverse proxy (for example `nginx`) before MISP to handle HTTPS connections.
+  * do not forget to send proper `X-Forwared-For` header
 
 ### Usage in air-gapped environment
 
@@ -60,9 +61,13 @@ If you don't trust image built by GitHub Actions and stored in GitHub Container 
 
     docker build --build-arg MISP_VERSION=v2.4.152 -t ghcr.io/nukib/misp https://github.com/NUKIB/misp.git#main
 
-If you don't like CentOS Stream, you can use as a base image different distribution that is compatible with CentOS, like [AlmaLinux](https://hub.docker.com/_/almalinux) or [Rocky Linux](https://hub.docker.com/r/rockylinux/rockylinux):
+If you don't like AlmaLinux, you can use as a base image different distribution that is compatible with AlmaLinux 8, like [CentOS Stream](https://www.centos.org/centos-stream/) or [Rocky Linux](https://hub.docker.com/r/rockylinux/rockylinux):
 
-    docker build --build-arg BASE_IMAGE=almalinux -t ghcr.io/nukib/misp https://github.com/NUKIB/misp.git#main
+    docker build --build-arg BASE_IMAGE=quay.io/centos/centos:stream8 -t ghcr.io/nukib/misp https://github.com/NUKIB/misp.git#main
+
+## Logging
+
+Logging is important to keep your MISP secure and in good condition. [Check detailed manual how to configure logging](docs/LOGGING.md)
 
 ## Environment variables
 
@@ -80,10 +85,10 @@ MISP requires MySQL or MariaDB database.
 
 ### Redis
 
-By default, MISP requires Redis. MISP will connect to Redis defined in `REDIS_HOST` variable on port `6379`.
+By default, MISP requires Redis. MISP will connect to Redis defined in `REDIS_HOST` variable on port `6379`. Redis alternative [Dragonfly](https://www.dragonflydb.io) is also supported.
 
 * `REDIS_HOST` (required, string) - hostname or IP address
-* `REDIS_PASSWORD` (optional, string) - password used to connect password protected Redis instance
+* `REDIS_PASSWORD` (optional, string) - password used to connect password-protected Redis instance
 * `REDIS_USE_TLS` (optional, bool) - enable encrypted communication
 
 #### Default Redis databases
@@ -101,8 +106,9 @@ By default, MISP requires Redis. MISP will connect to Redis defined in `REDIS_HO
 * `MISP_HOST_ORG_ID` (optional, int, default `1`) - MISP default organisation ID
 * `MISP_MODULE_URL` (optional, string) - full URL to MISP modules
 * `MISP_DEBUG` (optional, boolean, default `false`) - enable debug mode (do not enable on production environment)
+* `MISP_OUTPUT_COMPRESSION` (optional, boolean, default `true`) - enable or disable gzip or brotli output compression
 
-[Check more variables that allows MISP customization.](docs/CUSTOMIZATION.md)
+[Check more variables that allow MISP customization.](docs/CUSTOMIZATION.md)
 
 ### Email setting
 
@@ -133,8 +139,8 @@ inside the container:
 * `SECURITY_SALT` (required, string) - random string (recommended at least 32 chars) used for salting hashed values (you can use `openssl rand -base64 32` output as value)
 * `SECURITY_ADVANCED_AUTHKEYS` (optional, boolean, default `false`) - enable advanced auth keys support
 * `SECURITY_HIDE_ORGS` (optional, boolean, default `false`) - hide org names for normal users
-* `SECURITY_ENCRYPTION_KEY` (optional, string) - encryption key with at least 32 chars that will be used to encrypt sensitive information stored in database *WARNING:* Never changed this value after deployment!
-* `SECURITY_CRYPTO_POLICY` (optional, string, default `DEFAULT:NO-SHA1`) - set container wide crypto policies. [More details](https://www.redhat.com/en/blog/consistent-security-crypto-policies-red-hat-enterprise-linux-8). Use empty string to keep container default value.
+* `SECURITY_ENCRYPTION_KEY` (optional, string) - encryption key with at least 32 chars that will be used to encrypt sensitive information stored in database *WARNING:* Never change this value after deployment!
+* `SECURITY_CRYPTO_POLICY` (optional, string, default `DEFAULT:NO-SHA1`) - set container wide crypto policies. [More details](https://www.redhat.com/en/blog/consistent-security-crypto-policies-red-hat-enterprise-linux-8). Use an empty string to keep container default value.
 * `SECURITY_REST_CLIENT_ENABLE_ARBITRARY_URLS` (optional, boolean, default `false`) - enable to query any arbitrary URL via rest client (required for Workflows Webhook).
 
 ### Outgoing proxy
@@ -151,13 +157,6 @@ For pulling events from another MISP or fetching feeds MISP requires access to I
 
 [Check detailed manual how to configure OIDC login](docs/OIDC.md)
 
-### Sentry
-
-[Sentry](https://sentry.io/) is a tool for error tracking and support for this tool is integrated into this image. If configured, unhandled exceptions will be logged in Sentry.
-
-* `SENTRY_DSN` (optional, string) - Sentry DSN to catch exceptions
-* `SENTRY_ENVIRONMENT` (optional, string) - Sentry environment
-
 ### ZeroMQ
 
 * `ZEROMQ_ENABLED` (optional, boolean, default `false`) - enable ZeroMQ integration, server will listen at `*:50000`
@@ -166,25 +165,15 @@ For pulling events from another MISP or fetching feeds MISP requires access to I
 
 ### PHP config
 
-* `PHP_SESSIONS_IN_REDIS` (optional, boolean, default `true`) - when enabled, sessions information are stored in Redis. That provides better performance and sessions survives container restart
-* `PHP_SESSIONS_COOKIE_SAMESITE` (optional, string) - sets [session.cookie_samesite](https://www.php.net/manual/en/session.configuration.php#ini.session.cookie-samesite), can be `Strict` or `Lax`. By default, is set to Strict, just for testing on localhost is set to Lax.
+* `PHP_SESSIONS_IN_REDIS` (optional, boolean, default `true`) - when enabled, sessions are stored in Redis. That provides better performance and sessions survive container restart
+* `PHP_SESSIONS_COOKIE_SAMESITE` (optional, string, default `Lax`) - sets [session.cookie_samesite](https://www.php.net/manual/en/session.configuration.php#ini.session.cookie-samesite), can be `Strict` or `Lax`.
 * `PHP_SNUFFLEUPAGUS` (optional, boolean, default `true`) - enable PHP hardening by using [Snuffleupagus](https://snuffleupagus.readthedocs.io) PHP extension with [rules](snuffleupagus-misp.rules) tailored to MISP
 * `PHP_TIMEZONE` (optional, string, default `UTC`) - sets [date.timezone](https://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone)
 * `PHP_MEMORY_LIMIT` (optional, string, default `2048M`) - sets [memory_limit](https://www.php.net/manual/en/ini.core.php#ini.memory-limit)
 * `PHP_MAX_EXECUTION_TIME` (optional, int, default `300`) - sets [max_execution_time](https://www.php.net/manual/en/info.configuration.php#ini.max-execution-time) (in seconds)
 * `PHP_UPLOAD_MAX_FILESIZE` (optional, string, default `50M`) - sets [upload_max_filesize](https://www.php.net/manual/en/ini.core.php#ini.upload-max-filesize) and [post_max_size](https://www.php.net/manual/en/ini.core.php#ini.post-max-size)
 * `PHP_XDEBUG_ENABLED` (optional, boolean, default `false`) - enable [Xdebug](https://xdebug.org) PHP extension for debugging purposes (do not enable on production environment)
-* `PHP_XDEBUG_PROFILER_TRIGGER` (optional, string) - secret value for `XDEBUG_PROFILE` GET/POST variable that will enable profiling 
-
-### Syslog
-
-Syslog is collecting all logs from container (see [rsyslog.conf](rsyslog.conf)) and save them to `SYSLOG_FILE` or optionally sends them to remote syslog server.
-
-* `SYSLOG_TARGET` (optional, string) - if defined, all logs from the container are forwarded to a defined syslog server. Should be hostname or IP address of the system that shall receive messages.
-* `SYSLOG_PORT` (optional, int, default `601`)
-* `SYSLOG_PROTOCOL` (optional, string, default `tcp`)
-* `SYSLOG_FILE` (optional, string, default `/var/log/messages`) - path to file that will contain all logs collected by syslog
-* `SYSLOG_FILE_FORMAT` (optional, string, default `text-traditional`) - sets `SYSLOG_FILE` log file format, can be `json`, `text` or `text-traditional`
+* `PHP_XDEBUG_PROFILER_TRIGGER` (optional, string) - secret value for `XDEBUG_PROFILE` GET/POST variable that will enable profiling
 
 ### Jobber
 
@@ -193,37 +182,36 @@ Automation tasks are run by [jobber](https://github.com/dshearer/jobber) applica
 You can change default configuration by modifying these environment variables:
 
 * `JOBBER_USER_ID` (optional, int, default `1`) - MISP user ID which is used in scheduled tasks by Jobber (1 is the user ID of the initial created admin@admin.test user)
-* `JOBBER_CACHE_FEEDS_TIME` (optional, string, default `0 R0-10 6,8,10,12,14,16,18`) - [Jobber time string](https://dshearer.github.io/jobber/doc/v1.4/#time-strings) for cache feeds task scheduling
-* `JOBBER_FETCH_FEEDS_TIME` (optional, string, default `0 R0-10 6,8,10,12,14,16,18`) - [Jobber time string](https://dshearer.github.io/jobber/doc/v1.4/#time-strings) for fetch feeds task scheduling
-* `JOBBER_PULL_SERVERS_TIME` (optional, string, default `0 R0-10 6,10,15`) - [Jobber time string](https://dshearer.github.io/jobber/doc/v1.4/#time-strings) for pull servers task scheduling
-* `JOBBER_CACHE_SERVERS_TIME` (optional, string, default `0 R0-10 6,10,15`) - [Jobber time string](https://dshearer.github.io/jobber/doc/v1.4/#time-strings) for cache servers task scheduling
-* `JOBBER_SCAN_ATTACHMENT_TIME` (optional, string, default `0 R0-10 6`) - [Jobber time string](https://dshearer.github.io/jobber/doc/v1.4/#time-strings) for scan attachment task scheduling
-* `JOBBER_LOG_ROTATE_TIME` (optional, string, default `0 0 5`) - [Jobber time string](https://dshearer.github.io/jobber/doc/v1.4/#time-strings) for log rotate task scheduling
-* `JOBBER_USER_CHECK_VALIDITY_TIME` (optional, string, default `0 0 5`) - [Jobber time string](https://dshearer.github.io/jobber/doc/v1.4/#time-strings) for updating user role and org or blocking invalid users (makes sense only if `OIDC_OFFLINE_ACCESS` and `OIDC_CHECK_USER_VALIDITY` is set)
-* `JOBBER_SEND_PERIODIC_SUMMARY` (optional, string, default `0 0 6 * * 1-5`) - [Jobber time string](https://dshearer.github.io/jobber/doc/v1.4/#time-strings) for sending periodic summary for users (must be just once per day)
+* `JOBBER_CACHE_FEEDS_TIME` (optional, string, default `0 R0-10 6,8,10,12,14,16,18`) - [Jobber time string][jobber-time-string] for cache feeds task scheduling
+* `JOBBER_FETCH_FEEDS_TIME` (optional, string, default `0 R0-10 6,8,10,12,14,16,18`) - [Jobber time string][jobber-time-string] for fetch feeds task scheduling
+* `JOBBER_PULL_SERVERS_TIME` (optional, string, default `0 R0-10 6,10,15`) - [Jobber time string][jobber-time-string] for pull servers task scheduling
+* `JOBBER_PUSH_SERVERS_TIME` (optional, string) - [Jobber time string][jobber-time-string] for pushing to servers task scheduling
+* `JOBBER_CACHE_SERVERS_TIME` (optional, string, default `0 R0-10 6,10,15`) - [Jobber time string][jobber-time-string] for cache servers task scheduling
+* `JOBBER_SCAN_ATTACHMENT_TIME` (optional, string, default `0 R0-10 6`) - [Jobber time string][jobber-time-string] for scan attachment task scheduling
+* `JOBBER_LOG_ROTATE_TIME` (optional, string, default `0 0 5`) - [Jobber time string][jobber-time-string] for log rotate task scheduling
+* `JOBBER_USER_CHECK_VALIDITY_TIME` (optional, string, default `0 0 5`) - [Jobber time string][jobber-time-string] for updating user role and org or blocking invalid users (makes sense only if `OIDC_OFFLINE_ACCESS` and `OIDC_CHECK_USER_VALIDITY` is set)
+* `JOBBER_SEND_PERIODIC_SUMMARY` (optional, string, default `0 0 6 * * 1-5`) - [Jobber time string][jobber-time-string]for sending periodic summary for users (must be just once per day)
 
 If provided time string is empty, job will be disabled.
 
+[jobber-time-string]: https://dshearer.github.io/jobber/doc/v1.4/#time-strings
+
 ### Supervisor
 
-Supervisor is used to run all processes within the container, you can adjust the amount of workers which should be started by modifying these variables:
+Supervisor is used to run all processes within the container, you can adjust the amount of workers that should be started by modifying these variables:
 
 * `DEFAULT_WORKERS` (optional, int, default `1`) - number of default workers to start
 * `EMAIL_WORKERS` (optional, int, default `3`) - number of email workers to start
 * `CACHE_WORKERS` (optional, int, default `1`) - number of cache workers to start
 * `PRIO_WORKERS` (optional, int, default `3`) - number of prio workers to start
-* `UPDATE_WORKERS` (optional, int, default `1`) - number of upadte workers to start
+* `UPDATE_WORKERS` (optional, int, default `1`) - number of update workers to start
 
-If one of the variables is set to `0`, no workers will be started. 
+If one of the variables is set to `0`, no workers will be started.
 
-## Log locations
+### Extra variables
 
-* `/var/log/messages` - all logs captured by rsyslog (see [rsyslog.conf](rsyslog.conf) for definition)
-* `/var/log/httpd/` - Apache logs
-* `/var/log/php-fpm/` - PHP-FPM logs
-* `/var/www/MISP/app/tmp/logs/` - application logs (PHP)
-
-`X-Request-ID` HTTP header is logged in Apache, PHP-FPM, audit, and Sentry logs, so you can use this value to correlate requests between logs.
+* `ECS_`, `SYSLOG_` and `SENTRY_` are documented in [LOGGING.md](docs/LOGGING.md) 
+* `OIDC_` are documented in [OIDC.md](docs/OIDC.md) 
 
 ## Container volumes
 
@@ -236,4 +224,4 @@ If one of the variables is set to `0`, no workers will be started.
 
 This software is licensed under GNU General Public License version 3. MISP is licensed under GNU Affero General Public License version 3.
 
-* Copyright (C) 2022 [National Cyber and Information Security Agency of the Czech Republic (NÚKIB)](https://www.nukib.cz/en/) 🇨🇿
+* Copyright (C) 2022-2024 [National Cyber and Information Security Agency of the Czech Republic (NÚKIB)](https://nukib.gov.cz/en/) 🇨🇿

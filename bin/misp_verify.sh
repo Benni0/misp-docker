@@ -6,16 +6,19 @@ set -o xtrace
 # Check if PHP is properly configured
 php -v
 
+# Check if PHP extensions are properly built
+misp_verify.php
+
 # Build test
-# TODO: Temporary disable, because LIEF is broken in arm
-#cd /var/www/MISP/tests/
-#bash build-test.sh
+# Temporary disable for aarch64, because LIEF is broken in arm
+if [[ "$(uname -m)" != "aarch64" ]]; then
+  cd /var/www/MISP/tests/
+  bash build-test.sh
+fi
 
-check_jinja_template () {
-  python3 -c 'import sys, jinja2; env = jinja2.Environment(); template = open(sys.argv[1]).read(); env.parse(template); sys.exit(0)' $1
-}
+misp_create_configs.py validate
 
-check_jinja_template /var/www/MISP/app/Config/config.php
-check_jinja_template /var/www/MISP/app/Config/database.php
-check_jinja_template /var/www/MISP/app/Config/email.php
-check_jinja_template /etc/httpd/conf.d/misp.conf
+httpd_ecs_log.py test
+
+cd /var/www/MISP/
+git status

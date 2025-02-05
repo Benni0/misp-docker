@@ -4,9 +4,38 @@
 import os
 import sys
 import json
+import http.client
+import socket
+import xmlrpc.client
 import logging
 import subprocess
 import requests
+import misp_redis_ready
+
+
+class UnixStreamHTTPConnection(http.client.HTTPConnection):
+    def connect(self):
+        self.sock = socket.socket(
+            socket.AF_UNIX, socket.SOCK_STREAM
+        )
+        self.sock.connect(self.host)
+
+
+class UnixStreamTransport(xmlrpc.client.Transport, object):
+    def __init__(self, socket_path):
+        self.socket_path = socket_path
+        super().__init__()
+
+    def make_connection(self, host):
+        return UnixStreamHTTPConnection(self.socket_path)
+
+
+class UnixStreamXMLRPCClient(xmlrpc.client.ServerProxy):
+    def __init__(self, addr, **kwargs):
+        transport = UnixStreamTransport(addr)
+        super().__init__(
+            "http://", transport=transport, **kwargs
+        )
 
 
 class SubprocessException(Exception):
@@ -17,12 +46,31 @@ class SubprocessException(Exception):
 
 
 s = requests.Session()
-# This is a hack how to go through mod_auth_openidc
-s.headers["Authorization"] = "dummydummydummydummydummydummydummydummy"
+supervisor_api = UnixStreamXMLRPCClient("/run/supervisor/supervisor.sock")
+
+
+def check_supervisor():
+    state = supervisor_api.supervisor.getState()
+    if state["statecode"] != 1:
+        raise Exception(f"Unexpected state code {state['statecode']} received from supervisor, expected 1")
+
+
+def check_supervisor_process(process_name: str) -> bool:
+    try:
+        process_info = supervisor_api.supervisor.getProcessInfo(process_name)
+    except xmlrpc.client.Fault as e:
+        if e.faultCode == 10:  # BAD_NAME
+            return False  # process is not enabled
+        raise
+
+    if process_info["state"] != 20:
+        raise Exception(f"Invalid process state {process_info['statename']}, expected RUNNING")
+
+    return True
 
 
 def check_fpm_status() -> dict:
-    r = s.get('http://localhost/fpm-status')
+    r = s.get('http://127.0.0.2/fpm-status')
     r.raise_for_status()
 
     output = {}
@@ -33,7 +81,7 @@ def check_fpm_status() -> dict:
 
 
 def check_httpd_status() -> dict:
-    r = s.get('http://localhost/server-status?auto')
+    r = s.get('http://127.0.0.2/server-status?auto')
     r.raise_for_status()
 
     output = {}
@@ -46,10 +94,74 @@ def check_httpd_status() -> dict:
     return output
 
 
+def check_vector():
+    if not check_supervisor_process("vector"):
+        return False
+
+    r = s.get('http://127.0.0.1:8686/health')
+    r.raise_for_status()
+    if not r.json()["ok"]:
+        raise Exception(f"Invalid status ({r.text}) received from vector API")
+
+    return True
+
+
+def check_zeromq():
+    return check_supervisor_process("zeromq")
+
+
 def check_redis():
-    r = subprocess.run(["/var/www/MISP/app/Console/cake", "Admin", "redisReady"], capture_output=True)
-    if r.returncode != 0:
-        raise SubprocessException(r)
+    host, password, use_tls = misp_redis_ready.get_connection_info()
+    misp_redis_ready.connect(host, password, use_tls)
+
+
+def main() -> dict:
+    output = {
+        "supervisor": False,
+        "httpd": False,
+        "php-fpm": False,
+        "redis": False,
+    }
+
+    try:
+        check_supervisor()
+        output["supervisor"] = True
+    except Exception:
+        logging.exception("Could not check supervisor status")
+
+    try:
+        check_httpd_status()
+        output["httpd"] = True
+    except Exception:
+        logging.exception("Could not check httpd status. Probably Apache is broken.")
+
+    try:
+        check_fpm_status()
+        output["php-fpm"] = True
+    except Exception:
+        logging.exception("Could not check PHP-FPM status. Probably Apache or PHP-FPM is broken.")
+
+    try:
+        check_redis()
+        output["redis"] = True
+    except Exception:
+        logging.exception("Could not check Redis status. Probably Redis connection is broken.")
+
+    try:
+        if check_vector():
+            output["vector"] = True
+    except Exception:
+        output["vector"] = False
+        logging.exception("Could not check vector status")
+
+    try:
+        if check_zeromq():
+            output["zeromq"] = True
+    except Exception:
+        output["zeromq"] = False
+        logging.exception("Could not check zeromq status")
+
+    return output
 
 
 if __name__ == "__main__":
@@ -57,27 +169,12 @@ if __name__ == "__main__":
         print("This script should not be run under root user", file=sys.stderr)
         sys.exit(255)
 
-    output = {}
+    output = main()
+    sys.stdout.write(json.dumps(output, separators=(",", ":")))
 
-    try:
-        output["httpd"] = check_httpd_status()
-    except Exception:
-        logging.exception("Could not check httpd status. Probably Apache is broken.")
-        sys.exit(1)
+    for value in output.values():
+        if value is False:
+            sys.exit(1)
 
-    try:
-        output["fpm"] = check_fpm_status()
-    except Exception:
-        logging.exception("Could not check PHP-FPM status. Probably Apache or PHP-FPM is broken.")
-        sys.exit(2)
-
-    try:
-        check_redis()
-        output["redis"] = True
-    except Exception:
-        logging.exception("Could not check Redis status. Probably Redis connection is broken.")
-        sys.exit(3)
-
-    print(json.dumps(output), file=sys.stderr)
     sys.exit(0)
 

@@ -5,10 +5,50 @@ set -e
 # Set user
 export USER_ID=$(id -u)
 export GROUP_ID=$(id -g)
-envsubst < /root/passwd.template > /tmp/passwd
+envsubst > /root/passwd.template > /tmp/passwd
 export LD_PRELOAD=/usr/lib64/libnss_wrapper.so
 export NSS_WRAPPER_PASSWD=/tmp/passwd
 export NSS_WRAPPER_GROUP=/etc/group
+
+# usage: file_env VAR [DEFAULT]
+#    ie: file_env 'XYZ_DB_PASSWORD' 'example'
+# (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
+#  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
+file_env() {
+	local var="$1"
+	local fileVar="${var}_FILE"
+	local def="${2:-}"
+	if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+		printf >&2 'error: both %s and %s are set (but are exclusive)\n' "$var" "$fileVar"
+		exit 1
+	fi
+	local val="$def"
+	if [ "${!var:-}" ]; then
+		val="${!var}"
+	elif [ "${!fileVar:-}" ]; then
+		val="$(< "${!fileVar}")"
+	fi
+	export "$var"="$val"
+	unset "$fileVar"
+}
+
+# Initialize values that might be stored in a file
+
+file_env 'MYSQL_DATABASE'
+file_env 'MYSQL_LOGIN'
+file_env 'MYSQL_PASSWORD'
+file_env 'REDIS_PASSWORD'
+file_env 'GNUPG_PRIVATE_KEY'
+file_env 'GNUPG_PRIVATE_KEY_PASSWORD'
+file_env 'SECURITY_SALT'
+file_env 'SECURITY_ENCRYPTION_KEY'
+file_env 'PROXY_USER'
+file_env 'PROXY_PASSWORD'
+file_env 'ZEROMQ_USERNAME'
+file_env 'ZEROMQ_PASSWORD'
+
+# Change volumes permission to apache user
+chown apache:apache /var/www/MISP/app/{attachments,tmp/logs,files/certs,files/img/orgs,files/img/custom}
 
 if [ "$1" = 'supervisord' ]; then
     echo "======================================"
@@ -20,14 +60,21 @@ if [ "$1" = 'supervisord' ]; then
 
     #update-crypto-policies
 
+    # Create tmp directory for cake cache
+    mkdir -p -m 770 /tmp/cake/
+    chown apache:apache /tmp/cake/
+
     # Make config files not readable by others
     #chown root:apache /var/www/MISP/app/Config/{config.php,database.php,email.php}
     #chmod 440 /var/www/MISP/app/Config/{config.php,database.php,email.php}
 
     # Check syntax errors in generated config files
-    php -l /var/www/MISP/app/Config/config.php
-    php -l /var/www/MISP/app/Config/database.php
-    php -l /var/www/MISP/app/Config/email.php
+    php -n -l /var/www/MISP/app/Config/config.php
+    php -n -l /var/www/MISP/app/Config/database.php
+    php -n -l /var/www/MISP/app/Config/email.php
+
+    # Create symlinks to images from customisation
+    misp_image_symlinks.py
 
     # Check if all permissions are OK
     # misp_check_permissions.py
@@ -38,27 +85,27 @@ if [ "$1" = 'supervisord' ]; then
     # Check syntax of PHP-FPM config
     php-fpm --test
 
-    # Create database schema
-    misp_create_database.py $MYSQL_HOST $MYSQL_LOGIN $MYSQL_DATABASE /var/www/MISP/INSTALL/MYSQL.sql
+    # Create database schema and check if database is ready
+    misp_create_database.py "$MYSQL_HOST" "$MYSQL_LOGIN" "$MYSQL_DATABASE" /var/www/MISP/INSTALL/MYSQL.sql
+
+    # Check if redis is listening and running
+    misp_redis_ready.py
 
     # Update database to latest version
     /var/www/MISP/app/Console/cake Admin runUpdates || true
 
+    # Checks if encryption key is valid if set, but continue even if not valid
+    if [[ -n $SECURITY_ENCRYPTION_KEY ]]; then
+      /var/www/MISP/app/Console/cake Admin isEncryptionKeyValid || true
+    fi
+
+    # Precompress some CSS and JavaScript files by brotli
+    brotli -f /var/www/MISP/app/webroot/css/{bootstrap,bootstrap-datepicker,bootstrap-colorpicker,font-awesome,chosen.min,main}.css
+    brotli -f /var/www/MISP/app/webroot/js/{jquery,jquery-ui.min,chosen.jquery.min,bootstrap,bootstrap-datepicker,misp,vis}.js
+
     # Update all data stored in JSONs like objects, warninglists etc.
-    nice /var/www/MISP/app/Console/cake Admin updateJSON &
-
-    # Check if redis is listening and running
-    /var/www/MISP/app/Console/cake Admin redisReady
+    /var/www/MISP/app/Console/cake Admin updateJSON &
 fi
-
-# unset sensitive env variables
-unset MYSQL_PASSWORD
-unset REDIS_PASSWORD
-unset SECURITY_SALT
-unset SECURITY_ENCRYPTION_KEY
-unset OIDC_CLIENT_SECRET_INNER
-unset OIDC_CLIENT_SECRET
-unset OIDC_CLIENT_CRYPTO_PASS
 
 # Create GPG homedir under apache user
 # chown -R apache:root /var/www/MISP/.gnupg
@@ -67,24 +114,19 @@ gpg --homedir /var/www/MISP/.gnupg --list-keys
 
 if [ -n "${GNUPG_PRIVATE_KEY}" -a -n "${GNUPG_PRIVATE_KEY_PASSWORD}" ]; then
     # Import private key
-    su-exec apache gpg --homedir /var/www/MISP/.gnupg --import --batch \
+    gpg --homedir /var/www/MISP/.gnupg --import --batch \
         --passphrase "${GNUPG_PRIVATE_KEY_PASSWORD}" <<< "${GNUPG_PRIVATE_KEY}"
 fi
-unset GNUPG_PRIVATE_KEY
-unset GNUPG_PRIVATE_KEY_PASSWORD
 
-# Change volumes permission to apache user
-#chown apache:apache /var/www/MISP/app/attachments
-#chown apache:apache /var/www/MISP/app/tmp/logs
-#chown apache:apache /var/www/MISP/app/files/certs
+# unset sensitive env variables
+for variable_name in $(misp_create_configs.py sensitive-variables)
+do
+  unset "$variable_name"
+done
 
-# Remove possible exists PID files
-#rm -f /var/run/httpd/httpd.pid
-#rm -f /var/run/syslogd.pid
-
-# create jobber file for user
-cat /root/.jobber >> /tmp/${UID}.jobber
-chmod 644 /tmp/${UID}.jobber
-mkdir /var/jobber/${UID}
+# Remove possible exists PID and socket files
+rm -f /run/httpd/httpd.pid
+rm -f /run/syslogd.pid
+rm -f /run/vector
 
 exec "$@"

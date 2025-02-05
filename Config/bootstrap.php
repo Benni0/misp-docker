@@ -10,11 +10,6 @@ if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FOR
     unset($httpHost);
 }
 
-// If X-Forwarded-For HTTP header is set, use it as remote address
-if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-    $_SERVER['REMOTE_ADDR'] = explode(",", $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
-}
-
 /**
  * This file is loaded automatically by the app/webroot/index.php file after core.php
  *
@@ -41,13 +36,29 @@ function initializeSentry($sentryDsn) {
                 return $event;
             }
 
+            $remoteIp = function() {
+                $clientIpHeader = Configure::read('MISP.log_client_ip_header');
+                if ($clientIpHeader && isset($_SERVER[$clientIpHeader])) {
+                    $headerValue = $_SERVER[$clientIpHeader];
+                    // X-Forwarded-For can contain multiple IPs, see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
+                    if (($commaPos = strpos($headerValue, ',')) !== false) {
+                        $headerValue = substr($headerValue, 0, $commaPos);
+                    }
+                    $remoteIp = trim($headerValue);
+                } else {
+                    $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
+                }
+
+                return $remoteIp;
+            };
+
             App::uses('AuthComponent', 'Controller/Component');
             $authUser = AuthComponent::user();
             if (!empty($authUser)) {
                 $user = [
                     'id' => $authUser['id'],
                     'email' => $authUser['email'],
-                    'ip_address' => $_SERVER['REMOTE_ADDR'],
+                    'ip_address' => $remoteIp(),
                     'logged_by_authkey' => isset($authUser['logged_by_authkey']),
                 ];
                 if (isset($authUser['authkey_id'])) {
@@ -74,26 +85,62 @@ function initializeSentry($sentryDsn) {
             $scope->setTag('request_id', $_SERVER['HTTP_X_REQUEST_ID']);
         }
     });
+
+    App::uses('CakeLogInterface', 'Log');
+    class SentryLog implements CakeLogInterface
+    {
+        const LOG_LEVEL_BREADCRUMB = [
+            'emergency' => Sentry\Breadcrumb::LEVEL_FATAL,
+            'alert' => Sentry\Breadcrumb::LEVEL_FATAL,
+            'critical' => Sentry\Breadcrumb::LEVEL_FATAL,
+            'error' => Sentry\Breadcrumb::LEVEL_ERROR,
+            'warning' => Sentry\Breadcrumb::LEVEL_WARNING,
+            'notice' => Sentry\Breadcrumb::LEVEL_WARNING,
+            'info' => Sentry\Breadcrumb::LEVEL_INFO,
+            'debug' => Sentry\Breadcrumb::LEVEL_DEBUG,
+        ];
+
+        public function write($type, $message)
+        {
+            Sentry\addBreadcrumb('log', $message, [], self::LOG_LEVEL_BREADCRUMB[$type]);
+        }
+    }
+
+    CakeLog::config('sentry', [
+        'engine' => 'SentryLog',
+        'types' => ['notice', 'info', 'debug', 'warning', 'error', 'critical', 'alert', 'emergency'],
+    ]);
 }
 
 $sentryDsn = Configure::read('MISP.sentry_dsn');
 if (!empty($sentryDsn)) {
     initializeSentry($sentryDsn);
+}
 
-    // SimpleBackgroundTask or when SENTRY_ENABLED is set to true
-    if (getenv('BACKGROUND_JOB_ID') || getenv('SENTRY_ENABLED') === 'true') {
-        $errorHandler = new ConsoleErrorHandler();
+// Send exceptions and PHP errors for SimpleBackgroundTask or when MIPS_AUTOMATIC_TASK environment variable is set to 'true'
+// This overwrites default behaviour that just write logs to stderr
+if (getenv('BACKGROUND_JOB_ID') || getenv('MISP_AUTOMATIC_TASK') === 'true') {
+    $errorHandler = new ConsoleErrorHandler();
 
-        Configure::write('Exception.consoleHandler', function (Throwable $exception) use ($errorHandler) {
+    Configure::write('Exception.consoleHandler', function (Throwable $exception) use ($errorHandler) {
+        if (Configure::read('MISP.sentry_dsn')) {
             Sentry\captureException($exception);
-            $errorHandler->handleException($exception);
-        });
-        Configure::write('Error.consoleHandler', function ($code, $description, $file = null, $line = null, $context = null) use ($errorHandler) {
+        }
+        if (Configure::read('Security.ecs_log')) {
+            EcsLog::handleException($exception);
+        }
+        $errorHandler->handleException($exception);
+    });
+    Configure::write('Error.consoleHandler', function ($code, $description, $file = null, $line = null, $context = null) use ($errorHandler) {
+        if (Configure::read('MISP.sentry_dsn')) {
             $exception = new \ErrorException($description, 0, $code, $file, $line);
             Sentry\captureException($exception);
-            $errorHandler->handleError($code, $description, $file, $line, $context);
-        });
-    }
+        }
+        if (Configure::read('Security.ecs_log')) {
+            EcsLog::handleError($code, $description, $file, $line);
+        }
+        $errorHandler->handleError($code, $description, $file, $line);
+    });
 }
 
 /**
@@ -132,11 +179,24 @@ CakeLog::config('error', array(
 	'types' => array('warning', 'error', 'critical', 'alert', 'emergency'),
 	'file' => 'error',
 ));
-CakeLog::config('syslog', array(
-    'engine' => 'Syslog',
-    'types' => array('warning', 'error', 'critical', 'alert', 'emergency'),
-    'prefix' => 'MISP',
-));
+
+// Send error logs to syslog just when syslog is enabled in config
+if (Configure::read('Security.syslog')) {
+    CakeLog::config('syslog', array(
+        'engine' => 'Syslog',
+        'types' => array('warning', 'error', 'critical', 'alert', 'emergency'),
+        'prefix' => 'MISP',
+    ));
+}
+
+// Send error logs to socket in ECS JSON format just when ECS log is enabled in config
+if (Configure::read('Security.ecs_log')) {
+    CakePlugin::load('EcsLog');
+    CakeLog::config('ecs', [
+        'engine' => 'EcsLog.EcsLog',
+        'types' => ['notice', 'info', 'debug', 'warning', 'error', 'critical', 'alert', 'emergency'],
+    ]);
+}
 
 // Disable phar wrapper, because can be dangerous
 if (in_array('phar', stream_get_wrappers(), true)) {
