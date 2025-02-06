@@ -48,7 +48,7 @@ file_env 'ZEROMQ_USERNAME'
 file_env 'ZEROMQ_PASSWORD'
 
 # Change volumes permission to apache user
-chown apache:apache /var/www/MISP/app/{attachments,tmp/logs,files/certs,files/img/orgs,files/img/custom}
+# chown apache:apache /var/www/MISP/app/{attachments,tmp/logs,files/certs,files/img/orgs,files/img/custom}
 
 if [ "$1" = 'supervisord' ]; then
     echo "======================================"
@@ -61,8 +61,8 @@ if [ "$1" = 'supervisord' ]; then
     #update-crypto-policies
 
     # Create tmp directory for cake cache
-    mkdir -p -m 770 /tmp/cake/
-    chown apache:apache /tmp/cake/
+    #mkdir -p -m 770 /tmp/cake/
+    #chown apache:apache /tmp/cake/
 
     # Make config files not readable by others
     #chown root:apache /var/www/MISP/app/Config/{config.php,database.php,email.php}
@@ -74,7 +74,7 @@ if [ "$1" = 'supervisord' ]; then
     php -n -l /var/www/MISP/app/Config/email.php
 
     # Create symlinks to images from customisation
-    misp_image_symlinks.py
+    # misp_image_symlinks.py
 
     # Check if all permissions are OK
     # misp_check_permissions.py

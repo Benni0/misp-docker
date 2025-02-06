@@ -116,6 +116,11 @@ RUN chmod 770 /var/www/MISP/.gnupg
 # for debug
 RUN chmod 664 /etc/supervisord.d/misp.ini
 
+RUN chown apache:root /var/www/MISP/app/{attachments,tmp/logs,files/certs,files/img/orgs,files/img/custom}
+RUN chmod 770 /var/www/MISP/app/{attachments,tmp/logs,files/certs,files/img/orgs,files/img/custom}
+RUN mkdir -p -m 770 /tmp/c
+run chown apache:root /tmp/cake/
+
 # Verify image
 FROM misp AS verify
 RUN touch /verified && \
@@ -123,7 +128,6 @@ RUN touch /verified && \
     chown -R misp-user /verified && \
     chmod -R g=u /verified && \
     /usr/bin/vector --config-dir /etc/vector/ validate
-
 
 # Final image
 FROM misp
